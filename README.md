@@ -2,6 +2,10 @@
 
 A fully interactive, browser-based Data Structures & Algorithms (DSA) preparation tracker designed for cracking software engineering internships and full-time roles in June 2026.
 
+## Live Demo
+
+https://dsascratchtomaster.netlify.app/
+
 ## Features
 
 - **91 curated LeetCode problems** across 12 essential patterns
