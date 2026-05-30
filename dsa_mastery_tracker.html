@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSA Mastery Tracker - June Prep</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 900: '#0a0a0f', 800: '#12121a', 700: '#1a1a2e', 600: '#252542' },
+                        accent: { green: '#00ff88', blue: '#00d4ff', purple: '#a855f7', orange: '#fb923c', red: '#ef4444', yellow: '#fbbf24' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        body { background: #0a0a0f; }
+        .glass { background: rgba(26, 26, 46, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.06); }
+        .glass-hover:hover { background: rgba(37, 37, 66, 0.9); border-color: rgba(0, 212, 255, 0.2); }
+        .pattern-card { transition: all 0.3s ease; }
+        .pattern-card:hover { transform: translateY(-2px); }
+        .checkbox-custom { appearance: none; width: 20px; height: 20px; border: 2px solid #3b3b5c; border-radius: 6px; cursor: pointer; transition: all 0.2s; position: relative; }
+        .checkbox-custom:checked { background: #00ff88; border-color: #00ff88; }
+        .checkbox-custom:checked::after { content: '\2713'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #0a0a0f; font-size: 12px; font-weight: bold; }
+        .difficulty-easy { color: #00ff88; border-color: #00ff88; }
+        .difficulty-medium { color: #fbbf24; border-color: #fbbf24; }
+        .difficulty-hard { color: #ef4444; border-color: #ef4444; }
+        .progress-ring { transform: rotate(-90deg); }
+        .progress-ring-circle { transition: stroke-dashoffset 0.5s ease; }
+        .modal-overlay { background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .tag { font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .scroll-hide::-webkit-scrollbar { width: 6px; }
+        .scroll-hide::-webkit-scrollbar-track { background: transparent; }
+        .scroll-hide::-webkit-scrollbar-thumb { background: #3b3b5c; border-radius: 3px; }
+        .star-rating { color: #3b3b5c; cursor: pointer; transition: color 0.2s; }
+        .star-rating.active { color: #fbbf24; }
+        .confetti { position: fixed; pointer-events: none; z-index: 9999; }
+        .confetti-piece { position: absolute; width: 10px; height: 10px; animation: confetti-fall 3s ease-out forwards; }
+        @keyframes confetti-fall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+        .topic-filter.active { background: #00d4ff; color: #0a0a0f; }
+        .difficulty-filter.active { background: #00d4ff; color: #0a0a0f; }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 glass border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center">
+                        <i class="fas fa-code text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-white">DSA Mastery Tracker</h1>
+                        <p class="text-xs text-gray-400">June Prep • Crack the Interview</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right hidden sm:block">
+                        <div class="text-2xl font-bold text-accent-green mono" id="overall-progress">0%</div>
+                        <div class="text-xs text-gray-400">Overall Progress</div>
+                    </div>
+                    <button onclick="openAddModal()" class="bg-accent-blue hover:bg-accent-blue/80 text-dark-900 px-4 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Add Problem
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <div class="max-w-7xl mx-auto px-4 mt-6">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div class="glass rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-white mono" id="stat-total">0</div>
+                <div class="text-xs text-gray-400 mt-1">Total Problems</div>
+            </div>
+            <div class="glass rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-accent-green mono" id="stat-solved">0</div>
+                <div class="text-xs text-gray-400 mt-1">Solved</div>
+            </div>
+            <div class="glass rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-accent-yellow mono" id="stat-inprogress">0</div>
+                <div class="text-xs text-gray-400 mt-1">In Progress</div>
+            </div>
+            <div class="glass rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-accent-purple mono" id="stat-patterns">0</div>
+                <div class="text-xs text-gray-400 mt-1">Patterns</div>
+            </div>
+            <div class="glass rounded-xl p-4 text-center col-span-2 md:col-span-1">
+                <div class="text-2xl font-bold text-accent-orange mono" id="stat-streak">0</div>
+                <div class="text-xs text-gray-400 mt-1">Day Streak</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="max-w-7xl mx-auto px-4 mt-6">
+        <div class="glass rounded-xl p-4">
+            <div class="flex flex-wrap items-center gap-3">
+                <span class="text-sm text-gray-400 font-medium"><i class="fas fa-filter mr-1"></i> Filter:</span>
+                <div class="flex flex-wrap gap-2" id="topic-filters">
+                    <button class="topic-filter active px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="all">All</button>
+                    <button class="topic-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Arrays">Arrays</button>
+                    <button class="topic-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Two Pointers">Two Pointers</button>
+                    <button class="topic-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Sliding Window">Sliding Window</button>
+                    <button class="topic-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Binary Search">Binary Search</button>
+                    <button class="topic-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Linked List">Linked List</button>
+                    <button class="topic-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Stack">Stack</button>
+                    <button class="topic-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Trees">Trees</button>
+                    <button class="topic-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Graphs">Graphs</button>
+                    <button class="topic-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Heap">Heap</button>
+                    <button class="topic-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Backtracking">Backtracking</button>
+                    <button class="topic-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="DP">DP</button>
+                    <button class="topic-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Intervals">Intervals</button>
+                </div>
+                <div class="h-6 w-px bg-gray-700 hidden md:block"></div>
+                <div class="flex gap-2" id="difficulty-filters">
+                    <button class="difficulty-filter active px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="all">All Diff</button>
+                    <button class="difficulty-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Easy">Easy</button>
+                    <button class="difficulty-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Medium">Medium</button>
+                    <button class="difficulty-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-dark-600 text-gray-300 transition-all" data-filter="Hard">Hard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress by Pattern -->
+    <div class="max-w-7xl mx-auto px-4 mt-6">
+        <div class="glass rounded-xl p-4">
+            <h3 class="text-sm font-semibold text-gray-300 mb-3"><i class="fas fa-chart-pie mr-2 text-accent-blue"></i>Pattern Progress</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3" id="pattern-progress">
+                <!-- Dynamically filled -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 mt-6 pb-20">
+        <div id="problems-container" class="space-y-4">
+            <!-- Problems will be rendered here -->
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="problem-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0" onclick="closeModal()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="glass rounded-2xl w-full max-w-lg slide-in border border-white/10">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-white" id="modal-title">Add New Problem</h2>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                    <form id="problem-form" onsubmit="handleFormSubmit(event)">
+                        <input type="hidden" id="problem-id">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Problem Name</label>
+                                <input type="text" id="problem-name" required placeholder="e.g., Two Sum"
+                                    class="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-accent-blue transition-colors">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Pattern/Topic</label>
+                                    <select id="problem-pattern" required
+                                        class="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-accent-blue transition-colors">
+                                        <option value="Arrays">Arrays</option>
+                                        <option value="Two Pointers">Two Pointers</option>
+                                        <option value="Sliding Window">Sliding Window</option>
+                                        <option value="Binary Search">Binary Search</option>
+                                        <option value="Linked List">Linked List</option>
+                                        <option value="Stack">Stack</option>
+                                        <option value="Trees">Trees</option>
+                                        <option value="Graphs">Graphs</option>
+                                        <option value="Heap">Heap</option>
+                                        <option value="Backtracking">Backtracking</option>
+                                        <option value="DP">DP</option>
+                                        <option value="Intervals">Intervals</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Difficulty</label>
+                                    <select id="problem-difficulty" required
+                                        class="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-accent-blue transition-colors">
+                                        <option value="Easy">Easy</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="Hard">Hard</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">LeetCode URL (optional)</label>
+                                <input type="url" id="problem-url" placeholder="https://leetcode.com/problems/..."
+                                    class="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-accent-blue transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Notes / Approach</label>
+                                <textarea id="problem-notes" rows="3" placeholder="Your approach, key insights, time/space complexity..."
+                                    class="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-accent-blue transition-colors resize-none"></textarea>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Status</label>
+                                    <select id="problem-status"
+                                        class="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-accent-blue transition-colors">
+                                        <option value="todo">To Do</option>
+                                        <option value="inprogress">In Progress</option>
+                                        <option value="solved">Solved</option>
+                                        <option value="revision">Needs Revision</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Confidence (1-5)</label>
+                                    <div class="flex gap-1 mt-2" id="confidence-stars">
+                                        <i class="fas fa-star star-rating" data-value="1"></i>
+                                        <i class="fas fa-star star-rating" data-value="2"></i>
+                                        <i class="fas fa-star star-rating" data-value="3"></i>
+                                        <i class="fas fa-star star-rating" data-value="4"></i>
+                                        <i class="fas fa-star star-rating" data-value="5"></i>
+                                    </div>
+                                    <input type="hidden" id="problem-confidence" value="0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-3 mt-6">
+                            <button type="button" onclick="closeModal()" class="flex-1 bg-dark-700 hover:bg-dark-600 text-gray-300 py-2.5 rounded-lg font-semibold text-sm transition-all">
+                                Cancel
+                            </button>
+                            <button type="submit" class="flex-1 bg-accent-blue hover:bg-accent-blue/80 text-dark-900 py-2.5 rounded-lg font-semibold text-sm transition-all">
+                                Save Problem
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0" onclick="closeDeleteModal()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="glass rounded-2xl w-full max-w-sm slide-in border border-white/10 p-6 text-center">
+                <div class="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-trash-alt text-red-400 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Delete Problem?</h3>
+                <p class="text-sm text-gray-400 mb-6">Are you sure you want to delete "<span id="delete-problem-name" class="text-white font-medium"></span>"? This action cannot be undone.</p>
+                <div class="flex gap-3">
+                    <button onclick="closeDeleteModal()" class="flex-1 bg-dark-700 hover:bg-dark-600 text-gray-300 py-2.5 rounded-lg font-semibold text-sm transition-all">
+                        Cancel
+                    </button>
+                    <button onclick="confirmDelete()" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-all">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden">
+        <div class="glass rounded-xl px-5 py-3 flex items-center gap-3 border border-white/10 slide-in">
+            <i class="fas fa-check-circle text-accent-green" id="toast-icon"></i>
+            <span class="text-sm font-medium text-white" id="toast-message">Problem saved!</span>
+        </div>
+    </div>
+
+    <script>
+        // ===================== DATA =====================
+        let problems = [
+            // ========== ARRAYS ==========
+            { id: 1, name: "Two Sum", pattern: "Arrays", difficulty: "Easy", url: "https://leetcode.com/problems/two-sum/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 2, name: "Best Time to Buy and Sell Stock", pattern: "Arrays", difficulty: "Easy", url: "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 3, name: "Contains Duplicate", pattern: "Arrays", difficulty: "Easy", url: "https://leetcode.com/problems/contains-duplicate/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 4, name: "Product of Array Except Self", pattern: "Arrays", difficulty: "Medium", url: "https://leetcode.com/problems/product-of-array-except-self/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 5, name: "Maximum Subarray (Kadane's)", pattern: "Arrays", difficulty: "Medium", url: "https://leetcode.com/problems/maximum-subarray/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 6, name: "3Sum", pattern: "Arrays", difficulty: "Medium", url: "https://leetcode.com/problems/3sum/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 7, name: "Merge Intervals", pattern: "Arrays", difficulty: "Medium", url: "https://leetcode.com/problems/merge-intervals/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 8, name: "Rotate Array", pattern: "Arrays", difficulty: "Medium", url: "https://leetcode.com/problems/rotate-array/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 9, name: "Find Minimum in Rotated Sorted Array", pattern: "Arrays", difficulty: "Medium", url: "https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 10, name: "First Missing Positive", pattern: "Arrays", difficulty: "Hard", url: "https://leetcode.com/problems/first-missing-positive/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+
+            // ========== TWO POINTERS ==========
+            { id: 11, name: "Valid Palindrome", pattern: "Two Pointers", difficulty: "Easy", url: "https://leetcode.com/problems/valid-palindrome/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 12, name: "Move Zeroes", pattern: "Two Pointers", difficulty: "Easy", url: "https://leetcode.com/problems/move-zeroes/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 13, name: "Container With Most Water", pattern: "Two Pointers", difficulty: "Medium", url: "https://leetcode.com/problems/container-with-most-water/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 14, name: "3Sum Closest", pattern: "Two Pointers", difficulty: "Medium", url: "https://leetcode.com/problems/3sum-closest/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 15, name: "Trapping Rain Water", pattern: "Two Pointers", difficulty: "Hard", url: "https://leetcode.com/problems/trapping-rain-water/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 16, name: "4Sum", pattern: "Two Pointers", difficulty: "Medium", url: "https://leetcode.com/problems/4sum/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+
+            // ========== SLIDING WINDOW ==========
+            { id: 17, name: "Best Time to Buy and Sell Stock II", pattern: "Sliding Window", difficulty: "Easy", url: "https://leetcode.com/problems/best-time-to-buy-and-sell-stock-ii/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 18, name: "Longest Substring Without Repeating Characters", pattern: "Sliding Window", difficulty: "Medium", url: "https://leetcode.com/problems/longest-substring-without-repeating-characters/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 19, name: "Longest Repeating Character Replacement", pattern: "Sliding Window", difficulty: "Medium", url: "https://leetcode.com/problems/longest-repeating-character-replacement/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 20, name: "Permutation in String", pattern: "Sliding Window", difficulty: "Medium", url: "https://leetcode.com/problems/permutation-in-string/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 21, name: "Minimum Window Substring", pattern: "Sliding Window", difficulty: "Hard", url: "https://leetcode.com/problems/minimum-window-substring/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 22, name: "Sliding Window Maximum", pattern: "Sliding Window", difficulty: "Hard", url: "https://leetcode.com/problems/sliding-window-maximum/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+
+            // ========== BINARY SEARCH ==========
+            { id: 23, name: "Binary Search", pattern: "Binary Search", difficulty: "Easy", url: "https://leetcode.com/problems/binary-search/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 24, name: "Search Insert Position", pattern: "Binary Search", difficulty: "Easy", url: "https://leetcode.com/problems/search-insert-position/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 25, name: "Search in Rotated Sorted Array", pattern: "Binary Search", difficulty: "Medium", url: "https://leetcode.com/problems/search-in-rotated-sorted-array/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 26, name: "Find First and Last Position of Element", pattern: "Binary Search", difficulty: "Medium", url: "https://leetcode.com/problems/find-first-and-last-position-of-element-in-sorted-array/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 27, name: "Search a 2D Matrix", pattern: "Binary Search", difficulty: "Medium", url: "https://leetcode.com/problems/search-a-2d-matrix/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 28, name: "Find Minimum in Rotated Sorted Array II", pattern: "Binary Search", difficulty: "Hard", url: "https://leetcode.com/problems/find-minimum-in-rotated-sorted-array-ii/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 29, name: "Median of Two Sorted Arrays", pattern: "Binary Search", difficulty: "Hard", url: "https://leetcode.com/problems/median-of-two-sorted-arrays/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+
+            // ========== LINKED LIST ==========
+            { id: 30, name: "Reverse Linked List", pattern: "Linked List", difficulty: "Easy", url: "https://leetcode.com/problems/reverse-linked-list/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 31, name: "Merge Two Sorted Lists", pattern: "Linked List", difficulty: "Easy", url: "https://leetcode.com/problems/merge-two-sorted-lists/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 32, name: "Linked List Cycle", pattern: "Linked List", difficulty: "Easy", url: "https://leetcode.com/problems/linked-list-cycle/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 33, name: "Remove Nth Node From End", pattern: "Linked List", difficulty: "Medium", url: "https://leetcode.com/problems/remove-nth-node-from-end-of-list/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 34, name: "Reorder List", pattern: "Linked List", difficulty: "Medium", url: "https://leetcode.com/problems/reorder-list/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 35, name: "Merge k Sorted Lists", pattern: "Linked List", difficulty: "Hard", url: "https://leetcode.com/problems/merge-k-sorted-lists/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 36, name: "Copy List with Random Pointer", pattern: "Linked List", difficulty: "Medium", url: "https://leetcode.com/problems/copy-list-with-random-pointer/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 37, name: "LRU Cache", pattern: "Linked List", difficulty: "Medium", url: "https://leetcode.com/problems/lru-cache/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+
+            // ========== STACK ==========
+            { id: 38, name: "Valid Parentheses", pattern: "Stack", difficulty: "Easy", url: "https://leetcode.com/problems/valid-parentheses/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 39, name: "Min Stack", pattern: "Stack", difficulty: "Medium", url: "https://leetcode.com/problems/min-stack/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 40, name: "Daily Temperatures", pattern: "Stack", difficulty: "Medium", url: "https://leetcode.com/problems/daily-temperatures/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 41, name: "Next Greater Element I", pattern: "Stack", difficulty: "Easy", url: "https://leetcode.com/problems/next-greater-element-i/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 42, name: "Largest Rectangle in Histogram", pattern: "Stack", difficulty: "Hard", url: "https://leetcode.com/problems/largest-rectangle-in-histogram/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 43, name: "Trapping Rain Water (Stack)", pattern: "Stack", difficulty: "Hard", url: "https://leetcode.com/problems/trapping-rain-water/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 44, name: "Decode String", pattern: "Stack", difficulty: "Medium", url: "https://leetcode.com/problems/decode-string/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+
+            // ========== TREES ==========
+            { id: 45, name: "Maximum Depth of Binary Tree", pattern: "Trees", difficulty: "Easy", url: "https://leetcode.com/problems/maximum-depth-of-binary-tree/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 46, name: "Same Tree", pattern: "Trees", difficulty: "Easy", url: "https://leetcode.com/problems/same-tree/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 47, name: "Invert Binary Tree", pattern: "Trees", difficulty: "Easy", url: "https://leetcode.com/problems/invert-binary-tree/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 48, name: "Binary Tree Level Order Traversal", pattern: "Trees", difficulty: "Medium", url: "https://leetcode.com/problems/binary-tree-level-order-traversal/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 49, name: "Validate Binary Search Tree", pattern: "Trees", difficulty: "Medium", url: "https://leetcode.com/problems/validate-binary-search-tree/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 50, name: "Kth Smallest Element in a BST", pattern: "Trees", difficulty: "Medium", url: "https://leetcode.com/problems/kth-smallest-element-in-a-bst/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 51, name: "Construct Binary Tree from Preorder and Inorder", pattern: "Trees", difficulty: "Medium", url: "https://leetcode.com/problems/construct-binary-tree-from-preorder-and-inorder-traversal/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 52, name: "Binary Tree Maximum Path Sum", pattern: "Trees", difficulty: "Hard", url: "https://leetcode.com/problems/binary-tree-maximum-path-sum/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 53, name: "Serialize and Deserialize Binary Tree", pattern: "Trees", difficulty: "Hard", url: "https://leetcode.com/problems/serialize-and-deserialize-binary-tree/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 54, name: "Lowest Common Ancestor of BST", pattern: "Trees", difficulty: "Medium", url: "https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+
+            // ========== GRAPHS ==========
+            { id: 55, name: "Number of Islands", pattern: "Graphs", difficulty: "Medium", url: "https://leetcode.com/problems/number-of-islands/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 56, name: "Clone Graph", pattern: "Graphs", difficulty: "Medium", url: "https://leetcode.com/problems/clone-graph/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 57, name: "Course Schedule", pattern: "Graphs", difficulty: "Medium", url: "https://leetcode.com/problems/course-schedule/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 58, name: "Pacific Atlantic Water Flow", pattern: "Graphs", difficulty: "Medium", url: "https://leetcode.com/problems/pacific-atlantic-water-flow/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 59, name: "Word Ladder", pattern: "Graphs", difficulty: "Hard", url: "https://leetcode.com/problems/word-ladder/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 60, name: "Alien Dictionary", pattern: "Graphs", difficulty: "Hard", url: "https://leetcode.com/problems/alien-dictionary/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 61, name: "Graph Valid Tree", pattern: "Graphs", difficulty: "Medium", url: "https://leetcode.com/problems/graph-valid-tree/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 62, name: "Rotting Oranges", pattern: "Graphs", difficulty: "Medium", url: "https://leetcode.com/problems/rotting-oranges/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+
+            // ========== HEAP ==========
+            { id: 63, name: "Kth Largest Element in an Array", pattern: "Heap", difficulty: "Medium", url: "https://leetcode.com/problems/kth-largest-element-in-an-array/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 64, name: "Top K Frequent Elements", pattern: "Heap", difficulty: "Medium", url: "https://leetcode.com/problems/top-k-frequent-elements/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 65, name: "Find Median from Data Stream", pattern: "Heap", difficulty: "Hard", url: "https://leetcode.com/problems/find-median-from-data-stream/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 66, name: "Merge k Sorted Lists", pattern: "Heap", difficulty: "Hard", url: "https://leetcode.com/problems/merge-k-sorted-lists/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 67, name: "Task Scheduler", pattern: "Heap", difficulty: "Medium", url: "https://leetcode.com/problems/task-scheduler/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+
+            // ========== BACKTRACKING ==========
+            { id: 68, name: "Subsets", pattern: "Backtracking", difficulty: "Medium", url: "https://leetcode.com/problems/subsets/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 69, name: "Permutations", pattern: "Backtracking", difficulty: "Medium", url: "https://leetcode.com/problems/permutations/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 70, name: "Combination Sum", pattern: "Backtracking", difficulty: "Medium", url: "https://leetcode.com/problems/combination-sum/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 71, name: "N-Queens", pattern: "Backtracking", difficulty: "Hard", url: "https://leetcode.com/problems/n-queens/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 72, name: "Word Search", pattern: "Backtracking", difficulty: "Medium", url: "https://leetcode.com/problems/word-search/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 73, name: "Letter Combinations of a Phone Number", pattern: "Backtracking", difficulty: "Medium", url: "https://leetcode.com/problems/letter-combinations-of-a-phone-number/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 74, name: "Generate Parentheses", pattern: "Backtracking", difficulty: "Medium", url: "https://leetcode.com/problems/generate-parentheses/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+
+            // ========== DP ==========
+            { id: 75, name: "Climbing Stairs", pattern: "DP", difficulty: "Easy", url: "https://leetcode.com/problems/climbing-stairs/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 76, name: "House Robber", pattern: "DP", difficulty: "Medium", url: "https://leetcode.com/problems/house-robber/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 77, name: "Maximum Subarray (DP)", pattern: "DP", difficulty: "Medium", url: "https://leetcode.com/problems/maximum-subarray/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 78, name: "Coin Change", pattern: "DP", difficulty: "Medium", url: "https://leetcode.com/problems/coin-change/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 79, name: "Longest Increasing Subsequence", pattern: "DP", difficulty: "Medium", url: "https://leetcode.com/problems/longest-increasing-subsequence/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 80, name: "Longest Common Subsequence", pattern: "DP", difficulty: "Medium", url: "https://leetcode.com/problems/longest-common-subsequence/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 81, name: "Edit Distance", pattern: "DP", difficulty: "Hard", url: "https://leetcode.com/problems/edit-distance/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 82, name: "Word Break", pattern: "DP", difficulty: "Medium", url: "https://leetcode.com/problems/word-break/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 83, name: "Decode Ways", pattern: "DP", difficulty: "Medium", url: "https://leetcode.com/problems/decode-ways/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 84, name: "Unique Paths", pattern: "DP", difficulty: "Medium", url: "https://leetcode.com/problems/unique-paths/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 85, name: "Minimum Path Sum", pattern: "DP", difficulty: "Medium", url: "https://leetcode.com/problems/minimum-path-sum/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 86, name: "Regular Expression Matching", pattern: "DP", difficulty: "Hard", url: "https://leetcode.com/problems/regular-expression-matching/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+
+            // ========== INTERVALS ==========
+            { id: 87, name: "Merge Intervals", pattern: "Intervals", difficulty: "Medium", url: "https://leetcode.com/problems/merge-intervals/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 88, name: "Insert Interval", pattern: "Intervals", difficulty: "Medium", url: "https://leetcode.com/problems/insert-interval/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 89, name: "Non-overlapping Intervals", pattern: "Intervals", difficulty: "Medium", url: "https://leetcode.com/problems/non-overlapping-intervals/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 90, name: "Meeting Rooms II", pattern: "Intervals", difficulty: "Medium", url: "https://leetcode.com/problems/meeting-rooms-ii/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+            { id: 91, name: "Minimum Interval to Include Each Query", pattern: "Intervals", difficulty: "Hard", url: "https://leetcode.com/problems/minimum-interval-to-include-each-query/", status: "todo", confidence: 0, notes: "", solvedDate: null },
+        ];
+
+        let currentFilter = { topic: 'all', difficulty: 'all' };
+        let deleteTargetId = null;
+        let editingId = null;
+
+        // ===================== INIT =====================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFromStorage();
+            renderAll();
+            setupFilters();
+            setupStarRating();
+        });
+
+        // ===================== STORAGE =====================
+        function saveToStorage() {
+            localStorage.setItem('dsa-tracker-problems', JSON.stringify(problems));
+        }
+
+        function loadFromStorage() {
+            const saved = localStorage.getItem('dsa-tracker-problems');
+            if (saved) {
+                const savedProblems = JSON.parse(saved);
+                // Merge with defaults to get any new problems
+                const savedIds = new Set(savedProblems.map(p => p.id));
+                problems.forEach(p => {
+                    if (!savedIds.has(p.id)) {
+                        savedProblems.push(p);
+                    }
+                });
+                problems = savedProblems;
+            }
+        }
+
+        // ===================== RENDERING =====================
+        function renderAll() {
+            renderStats();
+            renderPatternProgress();
+            renderProblems();
+        }
+
+        function renderStats() {
+            const total = problems.length;
+            const solved = problems.filter(p => p.status === 'solved').length;
+            const inprogress = problems.filter(p => p.status === 'inprogress').length;
+            const patterns = [...new Set(problems.map(p => p.pattern))].length;
+            const progress = total > 0 ? Math.round((solved / total) * 100) : 0;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-solved').textContent = solved;
+            document.getElementById('stat-inprogress').textContent = inprogress;
+            document.getElementById('stat-patterns').textContent = patterns;
+            document.getElementById('overall-progress').textContent = progress + '%';
+
+            // Simple streak calculation (days with at least one solve)
+            const solvedDates = [...new Set(problems.filter(p => p.solvedDate).map(p => p.solvedDate))].sort().reverse();
+            let streak = 0;
+            const today = new Date().toISOString().split('T')[0];
+            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+            if (solvedDates.includes(today) || solvedDates.includes(yesterday)) {
+                streak = 1;
+                for (let i = 1; i < solvedDates.length; i++) {
+                    const curr = new Date(solvedDates[i-1]);
+                    const prev = new Date(solvedDates[i]);
+                    const diff = (curr - prev) / 86400000;
+                    if (diff === 1) streak++;
+                    else break;
+                }
+            }
+            document.getElementById('stat-streak').textContent = streak;
+        }
+
+        function renderPatternProgress() {
+            const patterns = [...new Set(problems.map(p => p.pattern))];
+            const container = document.getElementById('pattern-progress');
+            container.innerHTML = '';
+
+            patterns.forEach(pattern => {
+                const patternProblems = problems.filter(p => p.pattern === pattern);
+                const solved = patternProblems.filter(p => p.status === 'solved').length;
+                const total = patternProblems.length;
+                const pct = Math.round((solved / total) * 100);
+                const circumference = 2 * Math.PI * 18;
+                const offset = circumference - (pct / 100) * circumference;
+
+                const color = pct === 100 ? '#00ff88' : pct >= 50 ? '#00d4ff' : pct > 0 ? '#fbbf24' : '#3b3b5c';
+
+                container.innerHTML += `
+                    <div class="glass rounded-xl p-3 text-center cursor-pointer hover:bg-dark-700 transition-all" onclick="filterByPattern('${pattern}')">
+                        <div class="relative w-16 h-16 mx-auto mb-2">
+                            <svg class="w-16 h-16 progress-ring" viewBox="0 0 40 40">
+                                <circle cx="20" cy="20" r="18" fill="none" stroke="#1a1a2e" stroke-width="3"/>
+                                <circle cx="20" cy="20" r="18" fill="none" stroke="${color}" stroke-width="3" 
+                                    stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" stroke-linecap="round" class="progress-ring-circle"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-xs font-bold text-white">${pct}%</span>
+                            </div>
+                        </div>
+                        <div class="text-xs font-semibold text-gray-300 truncate">${pattern}</div>
+                        <div class="text-[10px] text-gray-500 mt-0.5">${solved}/${total}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderProblems() {
+            const container = document.getElementById('problems-container');
+            container.innerHTML = '';
+
+            let filtered = problems;
+            if (currentFilter.topic !== 'all') {
+                filtered = filtered.filter(p => p.pattern === currentFilter.topic);
+            }
+            if (currentFilter.difficulty !== 'all') {
+                filtered = filtered.filter(p => p.difficulty === currentFilter.difficulty);
+            }
+
+            // Group by pattern
+            const grouped = {};
+            filtered.forEach(p => {
+                if (!grouped[p.pattern]) grouped[p.pattern] = [];
+                grouped[p.pattern].push(p);
+            });
+
+            Object.keys(grouped).forEach(pattern => {
+                const patternProblems = grouped[pattern];
+                const solved = patternProblems.filter(p => p.status === 'solved').length;
+                const total = patternProblems.length;
+
+                const patternSection = document.createElement('div');
+                patternSection.className = 'fade-in';
+                patternSection.innerHTML = `
+                    <div class="flex items-center gap-3 mb-3 mt-6">
+                        <h2 class="text-lg font-bold text-white">${pattern}</h2>
+                        <span class="tag bg-dark-700 text-gray-400">${solved}/${total} solved</span>
+                        <div class="flex-1 h-px bg-dark-600"></div>
+                    </div>
+                    <div class="space-y-2">
+                        ${patternProblems.map(p => renderProblemRow(p)).join('')}
+                    </div>
+                `;
+                container.appendChild(patternSection);
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="glass rounded-xl p-12 text-center">
+                        <i class="fas fa-search text-4xl text-gray-600 mb-4"></i>
+                        <p class="text-gray-400">No problems match your filters.</p>
+                        <button onclick="resetFilters()" class="mt-3 text-accent-blue hover:underline text-sm">Reset filters</button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderProblemRow(p) {
+            const diffClass = p.difficulty === 'Easy' ? 'difficulty-easy' : p.difficulty === 'Medium' ? 'difficulty-medium' : 'difficulty-hard';
+            const statusColors = {
+                todo: 'bg-dark-700 text-gray-400',
+                inprogress: 'bg-accent-yellow/20 text-accent-yellow',
+                solved: 'bg-accent-green/20 text-accent-green',
+                revision: 'bg-accent-red/20 text-accent-red'
+            };
+            const statusLabels = { todo: 'To Do', inprogress: 'In Progress', solved: 'Solved', revision: 'Needs Revision' };
+
+            const stars = Array(5).fill(0).map((_, i) => 
+                `<i class="fas fa-star text-xs ${i < p.confidence ? 'text-accent-yellow' : 'text-dark-600'}"></i>`
+            ).join('');
+
+            const isSolved = p.status === 'solved';
+
+            return `
+                <div class="glass rounded-xl p-4 flex items-center gap-4 group hover:border-accent-blue/30 transition-all ${isSolved ? 'opacity-70' : ''}" id="problem-row-${p.id}">
+                    <input type="checkbox" class="checkbox-custom flex-shrink-0" 
+                        ${isSolved ? 'checked' : ''} 
+                        onchange="toggleSolve(${p.id}, this.checked)">
+
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-white text-sm truncate">${p.name}</span>
+                            <span class="tag border ${diffClass}">${p.difficulty}</span>
+                            <span class="tag ${statusColors[p.status]}">${statusLabels[p.status]}</span>
+                            ${p.solvedDate ? `<span class="tag bg-dark-700 text-gray-500"><i class="fas fa-calendar-check mr-1"></i>${p.solvedDate}</span>` : ''}
+                        </div>
+                        ${p.notes ? `<div class="text-xs text-gray-500 mt-1 truncate">${p.notes}</div>` : ''}
+                        <div class="flex items-center gap-1 mt-1">${stars}</div>
+                    </div>
+
+                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        ${p.url ? `<a href="${p.url}" target="_blank" class="w-8 h-8 rounded-lg bg-dark-700 hover:bg-accent-blue hover:text-dark-900 flex items-center justify-center text-gray-400 transition-all" title="Open LeetCode">
+                            <i class="fas fa-external-link-alt text-xs"></i>
+                        </a>` : ''}
+                        <button onclick="openEditModal(${p.id})" class="w-8 h-8 rounded-lg bg-dark-700 hover:bg-accent-yellow hover:text-dark-900 flex items-center justify-center text-gray-400 transition-all" title="Edit">
+                            <i class="fas fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="openDeleteModal(${p.id})" class="w-8 h-8 rounded-lg bg-dark-700 hover:bg-red-500 hover:text-white flex items-center justify-center text-gray-400 transition-all" title="Delete">
+                            <i class="fas fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ===================== CRUD OPERATIONS =====================
+        function toggleSolve(id, checked) {
+            const problem = problems.find(p => p.id === id);
+            if (!problem) return;
+
+            if (checked) {
+                problem.status = 'solved';
+                problem.solvedDate = new Date().toISOString().split('T')[0];
+                problem.confidence = Math.max(problem.confidence, 3);
+                triggerConfetti();
+                showToast('Problem marked as solved! 🎉', 'success');
+            } else {
+                problem.status = 'todo';
+                problem.solvedDate = null;
+                showToast('Problem reset to todo', 'info');
+            }
+
+            saveToStorage();
+            renderAll();
+        }
+
+        function openAddModal() {
+            editingId = null;
+            document.getElementById('modal-title').textContent = 'Add New Problem';
+            document.getElementById('problem-form').reset();
+            document.getElementById('problem-id').value = '';
+            resetStars();
+            document.getElementById('problem-modal').classList.remove('hidden');
+        }
+
+        function openEditModal(id) {
+            const problem = problems.find(p => p.id === id);
+            if (!problem) return;
+
+            editingId = id;
+            document.getElementById('modal-title').textContent = 'Edit Problem';
+            document.getElementById('problem-id').value = id;
+            document.getElementById('problem-name').value = problem.name;
+            document.getElementById('problem-pattern').value = problem.pattern;
+            document.getElementById('problem-difficulty').value = problem.difficulty;
+            document.getElementById('problem-url').value = problem.url || '';
+            document.getElementById('problem-notes').value = problem.notes || '';
+            document.getElementById('problem-status').value = problem.status;
+            setStars(problem.confidence);
+
+            document.getElementById('problem-modal').classList.remove('hidden');
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('problem-name').value.trim();
+            const pattern = document.getElementById('problem-pattern').value;
+            const difficulty = document.getElementById('problem-difficulty').value;
+            const url = document.getElementById('problem-url').value.trim();
+            const notes = document.getElementById('problem-notes').value.trim();
+            const status = document.getElementById('problem-status').value;
+            const confidence = parseInt(document.getElementById('problem-confidence').value) || 0;
+
+            if (editingId) {
+                // UPDATE
+                const problem = problems.find(p => p.id === editingId);
+                if (problem) {
+                    problem.name = name;
+                    problem.pattern = pattern;
+                    problem.difficulty = difficulty;
+                    problem.url = url;
+                    problem.notes = notes;
+                    problem.status = status;
+                    problem.confidence = confidence;
+                    if (status === 'solved' && !problem.solvedDate) {
+                        problem.solvedDate = new Date().toISOString().split('T')[0];
+                    }
+                    showToast('Problem updated successfully!', 'success');
+                }
+            } else {
+                // CREATE
+                const newId = Math.max(...problems.map(p => p.id), 0) + 1;
+                const newProblem = {
+                    id: newId,
+                    name,
+                    pattern,
+                    difficulty,
+                    url,
+                    notes,
+                    status,
+                    confidence,
+                    solvedDate: status === 'solved' ? new Date().toISOString().split('T')[0] : null
+                };
+                problems.push(newProblem);
+                showToast('New problem added!', 'success');
+            }
+
+            saveToStorage();
+            closeModal();
+            renderAll();
+        }
+
+        function openDeleteModal(id) {
+            const problem = problems.find(p => p.id === id);
+            if (!problem) return;
+            deleteTargetId = id;
+            document.getElementById('delete-problem-name').textContent = problem.name;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        function confirmDelete() {
+            if (deleteTargetId) {
+                problems = problems.filter(p => p.id !== deleteTargetId);
+                saveToStorage();
+                renderAll();
+                showToast('Problem deleted', 'info');
+            }
+            closeDeleteModal();
+        }
+
+        function closeModal() {
+            document.getElementById('problem-modal').classList.add('hidden');
+            editingId = null;
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+            deleteTargetId = null;
+        }
+
+        // ===================== FILTERS =====================
+        function setupFilters() {
+            document.querySelectorAll('.topic-filter').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.topic-filter').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter.topic = btn.dataset.filter;
+                    renderProblems();
+                });
+            });
+
+            document.querySelectorAll('.difficulty-filter').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.difficulty-filter').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter.difficulty = btn.dataset.filter;
+                    renderProblems();
+                });
+            });
+        }
+
+        function filterByPattern(pattern) {
+            document.querySelectorAll('.topic-filter').forEach(b => {
+                b.classList.toggle('active', b.dataset.filter === pattern);
+            });
+            currentFilter.topic = pattern;
+            renderProblems();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetFilters() {
+            currentFilter = { topic: 'all', difficulty: 'all' };
+            document.querySelectorAll('.topic-filter, .difficulty-filter').forEach(b => {
+                b.classList.toggle('active', b.dataset.filter === 'all');
+            });
+            renderProblems();
+        }
+
+        // ===================== STAR RATING =====================
+        function setupStarRating() {
+            const stars = document.querySelectorAll('#confidence-stars .star-rating');
+            stars.forEach(star => {
+                star.addEventListener('click', () => {
+                    const value = parseInt(star.dataset.value);
+                    setStars(value);
+                });
+            });
+        }
+
+        function setStars(value) {
+            document.getElementById('problem-confidence').value = value;
+            document.querySelectorAll('#confidence-stars .star-rating').forEach((star, i) => {
+                star.classList.toggle('active', i < value);
+            });
+        }
+
+        function resetStars() {
+            setStars(0);
+        }
+
+        // ===================== UI HELPERS =====================
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const msg = document.getElementById('toast-message');
+
+            icon.className = type === 'success' ? 'fas fa-check-circle text-accent-green' : 'fas fa-info-circle text-accent-blue';
+            msg.textContent = message;
+
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        function triggerConfetti() {
+            const colors = ['#00ff88', '#00d4ff', '#a855f7', '#fb923c', '#fbbf24'];
+            for (let i = 0; i < 30; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + 'vw';
+                piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.animationDelay = Math.random() * 0.5 + 's';
+                piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                document.body.appendChild(piece);
+                setTimeout(() => piece.remove(), 3000);
+            }
+        }
+    </script>
+</body>
+</html>
